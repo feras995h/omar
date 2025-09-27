@@ -20,11 +20,27 @@ app.set('trust proxy', true);
 
 // Middleware
 app.use(cors({
-  origin: true, // Allow any origin since we're using relative URLs
-  credentials: true
+  origin: [
+    'http://c4wwggwsg8oo0s4ksgsw88ss.72.60.92.146.sslip.io',
+    'https://c4wwggwsg8oo0s4ksgsw88ss.72.60.92.146.sslip.io',
+    'http://localhost:3000',
+    'https://localhost:3000'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Handle preflight requests
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
+});
 
 // Configure MIME types for static files
 app.use(express.static(__dirname, {
@@ -49,14 +65,17 @@ app.use(express.static(__dirname, {
 
 // Database connection configuration
 const dbConfig = {
-  host: process.env.VITE_MYSQL_HOST || process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.VITE_MYSQL_PORT || process.env.DB_PORT || '3306'),
-  user: process.env.VITE_MYSQL_USER || process.env.DB_USER || 'root',
-  password: process.env.VITE_MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
-  database: process.env.VITE_MYSQL_DATABASE || process.env.DB_NAME || 'storyboard',
+  host: process.env.VITE_MYSQL_HOST || process.env.DB_HOST || '72.60.92.146',
+  port: parseInt(process.env.VITE_MYSQL_PORT || process.env.DB_PORT || '5435'),
+  user: process.env.VITE_MYSQL_USER || process.env.DB_USER || 'mysql',
+  password: process.env.VITE_MYSQL_PASSWORD || process.env.DB_PASSWORD || '8lvoAx40IhOQQrctuTRHo6OIkLF0jDg2UbDbatW5T1fqcH171OjKtJjXKFL1b6ID',
+  database: process.env.VITE_MYSQL_DATABASE || process.env.DB_NAME || 'default',
   waitForConnections: true,
   connectionLimit: process.env.NODE_ENV === 'production' ? 5 : 10,
-  queueLimit: 0
+  queueLimit: 0,
+  acquireTimeout: 60000,
+  timeout: 60000,
+  reconnect: true
 };
 
 // Create connection pool
@@ -82,6 +101,34 @@ app.get('/api/health', (req, res) => {
     status: 'OK', 
     message: 'Story Board Engine Server is running',
     timestamp: new Date().toISOString()
+  });
+});
+
+// Additional API routes for frontend
+app.get('/api/settings', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    settings: {
+      theme: 'light',
+      language: 'ar',
+      notifications: true
+    }
+  });
+});
+
+app.get('/api/settings/language', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    language: 'ar',
+    availableLanguages: ['ar', 'en']
+  });
+});
+
+app.get('/api/auth/me', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    user: null,
+    message: 'Not authenticated'
   });
 });
 
