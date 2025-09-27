@@ -31,12 +31,28 @@ app.use(express.static(path.join(__dirname, 'dist'), {
   maxAge: process.env.NODE_ENV === 'production' ? '1y' : '0',
   etag: true,
   lastModified: true,
-  setHeaders: (res, path) => {
-    if (path.endsWith('.js')) {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.js')) {
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-    } else if (path.endsWith('.mjs')) {
+    } else if (filePath.endsWith('.mjs')) {
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-    } else if (path.endsWith('.css')) {
+    } else if (filePath.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css; charset=utf-8');
+    } else if (filePath.endsWith('.json')) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    }
+  }
+}));
+
+// Serve assets with proper headers
+app.use('/assets', express.static(path.join(__dirname, 'dist', 'assets'), {
+  maxAge: process.env.NODE_ENV === 'production' ? '1y' : '0',
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    } else if (filePath.endsWith('.css')) {
       res.setHeader('Content-Type', 'text/css; charset=utf-8');
     }
   }
@@ -78,6 +94,32 @@ app.get('/api/health', (req, res) => {
     message: 'Story Board Engine Server is running',
     timestamp: new Date().toISOString()
   });
+});
+
+// Debug route to check static files
+app.get('/api/debug/files', (req, res) => {
+  const fs = require('fs');
+  try {
+    const distPath = path.join(__dirname, 'dist');
+    const assetsPath = path.join(distPath, 'assets');
+    
+    const files = {
+      dist: fs.existsSync(distPath) ? fs.readdirSync(distPath) : 'Not found',
+      assets: fs.existsSync(assetsPath) ? fs.readdirSync(assetsPath) : 'Not found',
+      distPath: distPath,
+      assetsPath: assetsPath
+    };
+    
+    res.json({ 
+      status: 'OK', 
+      files: files 
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      status: 'ERROR', 
+      error: error.message 
+    });
+  }
 });
 
 // Database test endpoint
@@ -261,10 +303,14 @@ app.post('/api/storyboards', async (req, res) => {
 // Catch-all handler: send back React's index.html file for client-side routing
 // But only for non-asset requests
 app.get('*', (req, res) => {
-  // Don't serve index.html for asset requests
-  if (req.path.includes('.') && !req.path.endsWith('.html')) {
+  // Don't serve index.html for asset requests (js, css, images, etc.)
+  const assetExtensions = ['.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot'];
+  const hasAssetExtension = assetExtensions.some(ext => req.path.endsWith(ext));
+  
+  if (hasAssetExtension) {
     return res.status(404).send('File not found');
   }
+  
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
