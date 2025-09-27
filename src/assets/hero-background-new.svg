@@ -1,0 +1,122 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Gradient -->
+  <defs>
+    <linearGradient id="backgroundGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a2e1a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#2d4a2d;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a2e1a;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="lightGradient" cx="50%" cy="30%" r="60%">
+      <stop offset="0%" style="stop-color:#4ade80;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#16a34a;stop-opacity:0.1" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Main Background -->
+  <rect width="1920" height="1080" fill="url(#backgroundGradient)"/>
+  
+  <!-- Light Effect -->
+  <rect width="1920" height="1080" fill="url(#lightGradient)"/>
+  
+  <!-- Forest Silhouettes - Back Layer -->
+  <g opacity="0.4">
+    <!-- Tall Trees Background -->
+    <path d="M0 800 Q200 750 400 800 T800 780 Q1000 760 1200 780 T1600 800 Q1800 820 1920 800 V1080 H0 Z" fill="#0f1f0f"/>
+    
+    <!-- Mountain-like Tree Shapes -->
+    <path d="M100 850 Q150 800 200 850 Q250 820 300 850 Q350 800 400 850 Q450 820 500 850 Q550 800 600 850 Q650 820 700 850 Q750 800 800 850 Q850 820 900 850 Q950 800 1000 850 Q1050 820 1100 850 Q1150 800 1200 850 Q1250 820 1300 850 Q1350 800 1400 850 Q1450 820 1500 850 Q1550 800 1600 850 Q1650 820 1700 850 Q1750 800 1800 850 Q1850 820 1920 850 V1080 H0 Z" fill="#1a3d1a"/>
+  </g>
+  
+  <!-- Forest Silhouettes - Middle Layer -->
+  <g opacity="0.6">
+    <!-- Medium Trees -->
+    <path d="M0 900 Q100 880 200 900 Q300 870 400 900 Q500 880 600 900 Q700 870 800 900 Q900 880 1000 900 Q1100 870 1200 900 Q1300 880 1400 900 Q1500 870 1600 900 Q1700 880 1800 900 Q1850 890 1920 900 V1080 H0 Z" fill="#2d5a2d"/>
+    
+    <!-- Tree Details -->
+    <circle cx="150" cy="880" r="25" fill="#22c55e" opacity="0.3"/>
+    <circle cx="350" cy="870" r="20" fill="#16a34a" opacity="0.4"/>
+    <circle cx="550" cy="880" r="30" fill="#22c55e" opacity="0.2"/>
+    <circle cx="750" cy="870" r="25" fill="#16a34a" opacity="0.3"/>
+    <circle cx="950" cy="880" r="20" fill="#22c55e" opacity="0.4"/>
+    <circle cx="1150" cy="870" r="28" fill="#16a34a" opacity="0.2"/>
+    <circle cx="1350" cy="880" r="22" fill="#22c55e" opacity="0.3"/>
+    <circle cx="1550" cy="870" r="26" fill="#16a34a" opacity="0.4"/>
+    <circle cx="1750" cy="880" r="24" fill="#22c55e" opacity="0.2"/>
+  </g>
+  
+  <!-- Forest Silhouettes - Front Layer -->
+  <g opacity="0.8">
+    <!-- Close Trees -->
+    <path d="M0 950 Q80 930 160 950 Q240 920 320 950 Q400 930 480 950 Q560 920 640 950 Q720 930 800 950 Q880 920 960 950 Q1040 930 1120 950 Q1200 920 1280 950 Q1360 930 1440 950 Q1520 920 1600 950 Q1680 930 1760 950 Q1840 940 1920 950 V1080 H0 Z" fill="#4ade80" opacity="0.6"/>
+  </g>
+  
+  <!-- Floating Particles -->
+  <g opacity="0.7">
+    <circle cx="200" cy="300" r="3" fill="#22c55e">
+      <animate attributeName="cy" values="300;280;300" dur="4s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.7;1;0.7" dur="4s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="400" cy="250" r="2" fill="#16a34a">
+      <animate attributeName="cy" values="250;230;250" dur="5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.5;0.9;0.5" dur="5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="600" cy="200" r="4" fill="#22c55e">
+      <animate attributeName="cy" values="200;180;200" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="800" cy="350" r="2.5" fill="#16a34a">
+      <animate attributeName="cy" values="350;330;350" dur="4.5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.4;0.8;0.4" dur="4.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1000" cy="280" r="3" fill="#22c55e">
+      <animate attributeName="cy" values="280;260;280" dur="3.5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.7;1;0.7" dur="3.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1200" cy="320" r="2" fill="#16a34a">
+      <animate attributeName="cy" values="320;300;320" dur="5.5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.5;0.9;0.5" dur="5.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1400" cy="240" r="3.5" fill="#22c55e">
+      <animate attributeName="cy" values="240;220;240" dur="4s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.6;1;0.6" dur="4s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1600" cy="300" r="2.5" fill="#16a34a">
+      <animate attributeName="cy" values="300;280;300" dur="3.8s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.4;0.8;0.4" dur="3.8s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1800" cy="260" r="3" fill="#22c55e">
+      <animate attributeName="cy" values="260;240;260" dur="4.2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.7;1;0.7" dur="4.2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+  
+  <!-- Additional Atmospheric Effects -->
+  <g opacity="0.3">
+    <!-- Mist/Fog Effect -->
+    <ellipse cx="300" cy="850" rx="150" ry="30" fill="#22c55e" opacity="0.2">
+      <animate attributeName="rx" values="150;180;150" dur="8s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="700" cy="880" rx="120" ry="25" fill="#16a34a" opacity="0.15">
+      <animate attributeName="rx" values="120;140;120" dur="10s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="1100" cy="860" rx="160" ry="35" fill="#22c55e" opacity="0.18">
+      <animate attributeName="rx" values="160;190;160" dur="7s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="1500" cy="890" rx="140" ry="28" fill="#16a34a" opacity="0.12">
+      <animate attributeName="rx" values="140;170;140" dur="9s" repeatCount="indefinite"/>
+    </ellipse>
+  </g>
+  
+  <!-- Subtle Light Rays -->
+  <g opacity="0.1">
+    <path d="M960 0 L980 400 L940 400 Z" fill="#22c55e">
+      <animate attributeName="opacity" values="0.1;0.3;0.1" dur="6s" repeatCount="indefinite"/>
+    </path>
+    <path d="M1200 0 L1220 350 L1180 350 Z" fill="#16a34a">
+      <animate attributeName="opacity" values="0.05;0.25;0.05" dur="8s" repeatCount="indefinite"/>
+    </path>
+    <path d="M720 0 L740 450 L700 450 Z" fill="#22c55e">
+      <animate attributeName="opacity" values="0.08;0.28;0.08" dur="7s" repeatCount="indefinite"/>
+    </path>
+  </g>
+</svg>

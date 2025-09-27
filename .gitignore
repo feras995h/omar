@@ -1,0 +1,78 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+build/
+out/
+
+# Cache directories
+.cache/
+.parcel-cache/
+
+# OS generated files
+Thumbs.db
+.DS_Store
+
+# Lock files (keep package-lock.json for consistency)
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+
+# TypeScript build info
+*.tsbuildinfo
+*.zip
+
+# Temporary files
+temp/
+tmp/
+
+# Database and sensitive files
+*.env.production
+database/test-*.js
+database/create-*.js
+test-db-connection.js
+
+# Deployment files
+deployment-package/
+deployment-package.zip
+assets.zip
+ftp-script.txt
+
+# VPS and deployment guides (keep main README)
+VPS_DEPLOYMENT_GUIDE.md
+NODEJS_DEPLOYMENT.md
+deployment-guide.md
+DEPLOYMENT_INSTRUCTIONS.md
+MANUAL_DEPLOYMENT_GUIDE.md
+
+# cPanel files
+.cpanel.yml
