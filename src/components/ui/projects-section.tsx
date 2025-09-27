@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SocialShare } from "@/components/ui/social-share";
-import { TreePine, MapPin, Calendar, Users, Loader2 } from "lucide-react";
+import { TreePine, MapPin, Calendar, Users, Loader2, Eye } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
+import { ProjectDetails } from "./project-details";
 
 interface Project {
   id: number;
@@ -23,8 +24,11 @@ interface Project {
 export function ProjectsSection() {
   const { language, t } = useLanguage();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
 
   // Load projects from database
   useEffect(() => {
@@ -49,6 +53,15 @@ export function ProjectsSection() {
 
     loadProjects();
   }, []);
+
+  // Filter projects based on status
+  useEffect(() => {
+    if (statusFilter === 'all') {
+      setFilteredProjects(projects);
+    } else {
+      setFilteredProjects(projects.filter(project => project.status === statusFilter));
+    }
+  }, [projects, statusFilter]);
 
   // Get status display text
   const getStatusText = (status: string) => {
@@ -134,13 +147,49 @@ export function ProjectsSection() {
               {t('projects', 'مشاريعنا')}
             </span>
           </h2>
-          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-2">
+          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-2 mb-6">
             {t('projectsDesc', 'مشاريعنا البيئية التي تهدف إلى بناء مستقبل أخضر مستدام')}
           </p>
+          
+          {/* Filter Buttons */}
+          <div className="flex flex-wrap justify-center gap-2 mb-6">
+            <Button
+              variant={statusFilter === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter('all')}
+              className="text-xs sm:text-sm"
+            >
+              {t('allProjects', 'جميع المشاريع')} ({projects.length})
+            </Button>
+            <Button
+              variant={statusFilter === 'completed' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter('completed')}
+              className="text-xs sm:text-sm"
+            >
+              {t('completed', 'مكتملة')} ({projects.filter(p => p.status === 'completed').length})
+            </Button>
+            <Button
+              variant={statusFilter === 'in_progress' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter('in_progress')}
+              className="text-xs sm:text-sm"
+            >
+              {t('inProgress', 'قيد التنفيذ')} ({projects.filter(p => p.status === 'in_progress').length})
+            </Button>
+            <Button
+              variant={statusFilter === 'draft' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter('draft')}
+              className="text-xs sm:text-sm"
+            >
+              {t('draft', 'مسودة')} ({projects.filter(p => p.status === 'draft').length})
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-6 sm:gap-8">
-          {projects.map((project) => {
+          {filteredProjects.map((project) => {
             const statusText = getStatusText(project.status);
             const priorityText = getPriorityText(project.priority);
             const createdDate = new Date(project.created_at).toLocaleDateString('ar');
@@ -216,8 +265,9 @@ export function ProjectsSection() {
                     variant="outline" 
                     className="w-full group-hover:border-primary group-hover:text-primary transition-colors text-sm sm:text-base mb-3"
                     size="sm"
+                    onClick={() => setSelectedProjectId(project.id)}
                   >
-                    <Users className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                    <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                     {t('projectDetails', 'تفاصيل المشروع')}
                   </Button>
                   
@@ -234,6 +284,14 @@ export function ProjectsSection() {
           })}
         </div>
       </div>
+      
+      {/* Project Details Modal */}
+      {selectedProjectId && (
+        <ProjectDetails
+          projectId={selectedProjectId}
+          onClose={() => setSelectedProjectId(null)}
+        />
+      )}
     </section>
   );
 }

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { X, Save, Plus, Trash, Eye, Settings, FileText, Palette, Users, Upload, Image } from "lucide-react";
+import { X, Save, Plus, Trash, Eye, Settings, FileText, Palette, Users, Upload, Image, FolderOpen, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface AdminDashboardProps {
@@ -25,11 +25,27 @@ interface UploadedFile {
   createdAt: string;
 }
 
+interface Project {
+  id: number;
+  title: string;
+  description: string;
+  thumbnail_url?: string;
+  status: string;
+  priority: string;
+  owner_id: number;
+  owner_name?: string;
+  created_at: string;
+  updated_at: string;
+  deadline?: string;
+}
+
 export function AdminDashboard({ isOpen, onClose }: AdminDashboardProps) {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("content");
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
 
   // Load uploaded files
   const loadUploadedFiles = async () => {
@@ -83,10 +99,63 @@ export function AdminDashboard({ isOpen, onClose }: AdminDashboardProps) {
     }
   };
 
-  // Load files when component mounts
+  // Load projects
+  const loadProjects = async () => {
+    setIsLoadingProjects(true);
+    try {
+      const response = await fetch('/api/projects');
+      const result = await response.json();
+      
+      if (result.status === 'OK') {
+        setProjects(result.data);
+      } else {
+        throw new Error(result.message || 'فشل في تحميل المشاريع');
+      }
+    } catch (error) {
+      console.error('Error loading projects:', error);
+      toast({
+        title: "خطأ في تحميل المشاريع",
+        description: error instanceof Error ? error.message : "حدث خطأ غير متوقع",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingProjects(false);
+    }
+  };
+
+  // Delete project
+  const deleteProject = async (projectId: number) => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: 'DELETE'
+      });
+      
+      const result = await response.json();
+      
+      if (result.status === 'OK') {
+        setProjects(prev => prev.filter(project => project.id !== projectId));
+        toast({
+          title: "تم حذف المشروع بنجاح",
+          description: "تم حذف المشروع من قاعدة البيانات",
+        });
+      } else {
+        throw new Error(result.message || 'فشل في حذف المشروع');
+      }
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      toast({
+        title: "خطأ في حذف المشروع",
+        description: error instanceof Error ? error.message : "حدث خطأ غير متوقع",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Load files and projects when component mounts
   useEffect(() => {
     if (isOpen) {
       loadUploadedFiles();
+      loadProjects();
     }
   }, [isOpen]);
 
@@ -115,10 +184,14 @@ export function AdminDashboard({ isOpen, onClose }: AdminDashboardProps) {
         {/* Dashboard Content */}
         <div className="flex-1 py-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-            <TabsList className="grid w-full grid-cols-5 mb-6">
+            <TabsList className="grid w-full grid-cols-6 mb-6">
               <TabsTrigger value="content" className="flex items-center gap-2">
                 <FileText className="w-4 h-4" />
                 إدارة المحتوى
+              </TabsTrigger>
+              <TabsTrigger value="projects" className="flex items-center gap-2">
+                <FolderOpen className="w-4 h-4" />
+                المشاريع
               </TabsTrigger>
               <TabsTrigger value="files" className="flex items-center gap-2">
                 <Upload className="w-4 h-4" />
@@ -223,6 +296,103 @@ export function AdminDashboard({ isOpen, onClose }: AdminDashboardProps) {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => navigator.clipboard.writeText(file.url)}
+                                className="flex-1"
+                              >
+                                نسخ الرابط
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Projects Management */}
+            <TabsContent value="projects" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FolderOpen className="w-5 h-5" />
+                    إدارة المشاريع
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm text-gray-600">
+                        إجمالي المشاريع: {projects.length}
+                      </p>
+                      <Button onClick={loadProjects} disabled={isLoadingProjects}>
+                        {isLoadingProjects ? "جاري التحديث..." : "تحديث"}
+                      </Button>
+                    </div>
+                    
+                    {isLoadingProjects ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                        <p className="mt-2 text-sm text-gray-600">جاري تحميل المشاريع...</p>
+                      </div>
+                    ) : projects.length === 0 ? (
+                      <div className="text-center py-8">
+                        <FolderOpen className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                        <p className="text-gray-600">لا توجد مشاريع</p>
+                        <p className="text-sm text-gray-500">استخدم صفحة المشاريع لإنشاء مشاريع جديدة</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {projects.map((project) => (
+                          <div key={project.id} className="border rounded-lg p-4 space-y-3">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h3 className="font-medium text-sm mb-2 line-clamp-2">
+                                  {project.title}
+                                </h3>
+                                <p className="text-xs text-gray-500 line-clamp-2">
+                                  {project.description}
+                                </p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteProject(project.id)}
+                                className="text-red-500 hover:text-red-700 ml-2"
+                              >
+                                <Trash className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <Badge 
+                                variant={project.status === 'completed' ? 'default' : 'outline'}
+                                className="text-xs"
+                              >
+                                {project.status === 'completed' ? 'مكتمل' : 
+                                 project.status === 'in_progress' ? 'قيد التنفيذ' : 
+                                 project.status === 'draft' ? 'مسودة' : project.status}
+                              </Badge>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {new Date(project.created_at).toLocaleDateString('ar')}
+                              </span>
+                            </div>
+                            
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => window.open(`/projects`, '_blank')}
+                                className="flex-1"
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                عرض
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigator.clipboard.writeText(`/projects`)}
                                 className="flex-1"
                               >
                                 نسخ الرابط

@@ -768,6 +768,34 @@ app.delete('/api/projects/:id', async (req, res) => {
   }
 });
 
+// Get project images
+app.get('/api/projects/:id/images', async (req, res) => {
+  try {
+    const [rows] = await pool.execute(`
+      SELECT id, filename, original_name, mime_type, file_size
+      FROM uploaded_files 
+      WHERE file_type = 'image' AND filename LIKE ?
+      ORDER BY created_at DESC
+    `, [`%project-${req.params.id}%`]);
+    
+    res.json({
+      status: 'OK',
+      data: rows.map(file => ({
+        id: file.id,
+        url: `/api/files/${file.id}`,
+        filename: file.original_name,
+        size: file.file_size
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching project images:', error);
+    res.status(500).json({
+      status: 'ERROR',
+      message: 'خطأ في جلب صور المشروع'
+    });
+  }
+});
+
 // ===================================
 // Storyboards API Endpoints
 // ===================================
