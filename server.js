@@ -229,6 +229,11 @@ app.get('/api/debug/files', (req, res) => {
   });
 });
 
+// Test page for debugging
+app.get('/test', (req, res) => {
+  res.sendFile(path.join(__dirname, 'test-app.html'));
+});
+
 // Database test endpoint
 app.get('/api/db-test', async (req, res) => {
   try {

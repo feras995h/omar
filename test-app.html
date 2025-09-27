@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار التطبيق - Story Board Engine</title>
+    <style>
+        body {
+            font-family: 'Cairo', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #fff;
+        }
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .test-button:hover {
+            background: #45a049;
+        }
+        .result {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            border-left: 4px solid #4CAF50;
+        }
+        .error {
+            border-left: 4px solid #f44336;
+        }
+        .login-form {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 اختبار Story Board Engine</h1>
+        
+        <div class="test-section">
+            <h3>🔗 اختبار الاتصال بالخادم</h3>
+            <button class="test-button" onclick="testHealth()">اختبار صحة الخادم</button>
+            <button class="test-button" onclick="testDatabase()">اختبار قاعدة البيانات</button>
+            <div id="health-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>⚙️ اختبار الإعدادات</h3>
+            <button class="test-button" onclick="testSettings()">اختبار الإعدادات</button>
+            <button class="test-button" onclick="testLanguage()">اختبار اللغة</button>
+            <div id="settings-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔐 اختبار تسجيل الدخول</h3>
+            <div class="login-form">
+                <div class="form-group">
+                    <label for="username">اسم المستخدم:</label>
+                    <input type="text" id="username" placeholder="admin" value="admin">
+                </div>
+                <div class="form-group">
+                    <label for="password">كلمة السر:</label>
+                    <input type="password" id="password" placeholder="admin123" value="admin123">
+                </div>
+                <button class="test-button" onclick="testLogin()">تسجيل الدخول</button>
+            </div>
+            <div id="login-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 معلومات النظام</h3>
+            <div id="system-info" class="result">
+                <strong>الرابط الحالي:</strong> <span id="current-url"></span><br>
+                <strong>البروتوكول:</strong> <span id="protocol"></span><br>
+                <strong>المنفذ:</strong> <span id="port"></span><br>
+                <strong>الخادم:</strong> <span id="host"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // عرض معلومات النظام
+        function showSystemInfo() {
+            const url = new URL(window.location.href);
+            document.getElementById('current-url').textContent = window.location.href;
+            document.getElementById('protocol').textContent = url.protocol;
+            document.getElementById('port').textContent = url.port || (url.protocol === 'https:' ? '443' : '80');
+            document.getElementById('host').textContent = url.hostname;
+        }
+
+        // اختبار صحة الخادم
+        async function testHealth() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.textContent = 'جاري الاختبار...';
+            
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                resultDiv.textContent = `✅ نجح الاختبار!\n${JSON.stringify(data, null, 2)}`;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `❌ فشل الاختبار: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // اختبار قاعدة البيانات
+        async function testDatabase() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.textContent = 'جاري اختبار قاعدة البيانات...';
+            
+            try {
+                const response = await fetch('/api/db-test');
+                const data = await response.json();
+                resultDiv.textContent = `✅ نجح اختبار قاعدة البيانات!\n${JSON.stringify(data, null, 2)}`;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `❌ فشل اختبار قاعدة البيانات: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // اختبار الإعدادات
+        async function testSettings() {
+            const resultDiv = document.getElementById('settings-result');
+            resultDiv.textContent = 'جاري اختبار الإعدادات...';
+            
+            try {
+                const response = await fetch('/settings');
+                const data = await response.json();
+                resultDiv.textContent = `✅ نجح اختبار الإعدادات!\n${JSON.stringify(data, null, 2)}`;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `❌ فشل اختبار الإعدادات: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // اختبار اللغة
+        async function testLanguage() {
+            const resultDiv = document.getElementById('settings-result');
+            resultDiv.textContent = 'جاري اختبار اللغة...';
+            
+            try {
+                const response = await fetch('/settings/language');
+                const data = await response.json();
+                resultDiv.textContent = `✅ نجح اختبار اللغة!\n${JSON.stringify(data, null, 2)}`;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `❌ فشل اختبار اللغة: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // اختبار تسجيل الدخول
+        async function testLogin() {
+            const resultDiv = document.getElementById('login-result');
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            resultDiv.textContent = 'جاري تسجيل الدخول...';
+            
+            try {
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.textContent = `✅ نجح تسجيل الدخول!\n${JSON.stringify(data, null, 2)}`;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.textContent = `❌ فشل تسجيل الدخول: ${data.message || 'خطأ غير معروف'}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.textContent = `❌ خطأ في تسجيل الدخول: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // تشغيل الاختبارات عند تحميل الصفحة
+        window.onload = function() {
+            showSystemInfo();
+            testHealth();
+        };
+    </script>
+</body>
+</html>
