@@ -33,10 +33,17 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true,
+    https: false, // Force HTTP
   },
   preview: {
     port: 3000,
     host: true,
+    https: false, // Force HTTP
   },
   base: './', // Important for cPanel deployment
+  define: {
+    // Force HTTP in production
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
+    'process.env.VITE_FORCE_HTTP': JSON.stringify('true'),
+  },
 })
