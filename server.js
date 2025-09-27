@@ -34,26 +34,15 @@ app.use(express.static(path.join(__dirname, 'dist'), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.js')) {
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
     } else if (filePath.endsWith('.mjs')) {
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
     } else if (filePath.endsWith('.css')) {
       res.setHeader('Content-Type', 'text/css; charset=utf-8');
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
     } else if (filePath.endsWith('.json')) {
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    }
-  }
-}));
-
-// Serve assets with proper headers
-app.use('/assets', express.static(path.join(__dirname, 'dist', 'assets'), {
-  maxAge: process.env.NODE_ENV === 'production' ? '1y' : '0',
-  etag: true,
-  lastModified: true,
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.js')) {
-      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-    } else if (filePath.endsWith('.css')) {
-      res.setHeader('Content-Type', 'text/css; charset=utf-8');
     }
   }
 }));
@@ -98,28 +87,12 @@ app.get('/api/health', (req, res) => {
 
 // Debug route to check static files
 app.get('/api/debug/files', (req, res) => {
-  const fs = require('fs');
-  try {
-    const distPath = path.join(__dirname, 'dist');
-    const assetsPath = path.join(distPath, 'assets');
-    
-    const files = {
-      dist: fs.existsSync(distPath) ? fs.readdirSync(distPath) : 'Not found',
-      assets: fs.existsSync(assetsPath) ? fs.readdirSync(assetsPath) : 'Not found',
-      distPath: distPath,
-      assetsPath: assetsPath
-    };
-    
-    res.json({ 
-      status: 'OK', 
-      files: files 
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      status: 'ERROR', 
-      error: error.message 
-    });
-  }
+  res.json({ 
+    status: 'OK', 
+    message: 'Debug endpoint working',
+    distPath: path.join(__dirname, 'dist'),
+    assetsPath: path.join(__dirname, 'dist', 'assets')
+  });
 });
 
 // Database test endpoint
