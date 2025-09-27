@@ -1,0 +1,23 @@
+{
+  "buildpack": "nodejs",
+  "nodejs": {
+    "version": "18"
+  },
+  "build": {
+    "command": "npm ci",
+    "directory": "."
+  },
+  "start": {
+    "command": "npm run build && node server.js"
+  },
+  "environment": {
+    "NODE_ENV": "production",
+    "PORT": "3000"
+  },
+  "healthcheck": {
+    "path": "/api/health",
+    "interval": 30,
+    "timeout": 10,
+    "retries": 3
+  }
+}
