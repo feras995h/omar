@@ -110,6 +110,111 @@ app.get('/api/storyboards', async (req, res) => {
   }
 });
 
+// Authentication endpoints
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ 
+        status: 'ERROR', 
+        message: 'Username and password are required' 
+      });
+    }
+    
+    // Query user from database
+    const [users] = await pool.execute(
+      'SELECT * FROM users WHERE username = ? OR email = ?',
+      [username, username]
+    );
+    
+    if (users.length === 0) {
+      return res.status(401).json({ 
+        status: 'ERROR', 
+        message: 'Invalid username or password' 
+      });
+    }
+    
+    const user = users[0];
+    
+    // Simple password comparison (in production, use bcrypt)
+    if (user.password !== password) {
+      return res.status(401).json({ 
+        status: 'ERROR', 
+        message: 'Invalid username or password' 
+      });
+    }
+    
+    // Return user data (excluding password)
+    const { password: _, ...userWithoutPassword } = user;
+    
+    res.json({ 
+      status: 'OK', 
+      message: 'Login successful',
+      user: userWithoutPassword
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ 
+      status: 'ERROR', 
+      message: 'Internal server error',
+      error: error.message 
+    });
+  }
+});
+
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { username, email, password, full_name } = req.body;
+    
+    if (!username || !email || !password) {
+      return res.status(400).json({ 
+        status: 'ERROR', 
+        message: 'Username, email, and password are required' 
+      });
+    }
+    
+    // Check if user already exists
+    const [existingUsers] = await pool.execute(
+      'SELECT id FROM users WHERE username = ? OR email = ?',
+      [username, email]
+    );
+    
+    if (existingUsers.length > 0) {
+      return res.status(409).json({ 
+        status: 'ERROR', 
+        message: 'Username or email already exists' 
+      });
+    }
+    
+    // Insert new user
+    const [result] = await pool.execute(
+      'INSERT INTO users (username, email, password, full_name, role) VALUES (?, ?, ?, ?, ?)',
+      [username, email, password, full_name || username, 'user']
+    );
+    
+    // Return success (excluding password)
+    res.status(201).json({ 
+      status: 'OK', 
+      message: 'User registered successfully',
+      user: {
+        id: result.insertId,
+        username,
+        email,
+        full_name: full_name || username,
+        role: 'user'
+      }
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ 
+      status: 'ERROR', 
+      message: 'Internal server error',
+      error: error.message 
+    });
+  }
+});
+
 // Create storyboard endpoint (example)
 app.post('/api/storyboards', async (req, res) => {
   try {
