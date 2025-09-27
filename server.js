@@ -385,6 +385,28 @@ app.get('/api/auth/me', (req, res) => {
   });
 });
 
+// Settings update endpoints
+app.put('/api/settings/social-links', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Social links updated successfully'
+  });
+});
+
+app.put('/api/settings/basic-data', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Basic data updated successfully'
+  });
+});
+
+app.put('/api/settings/image-settings', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Image settings updated successfully'
+  });
+});
+
 // Routes without /api/ prefix for frontend compatibility
 app.get('/settings', (req, res) => {
   res.json({ 
@@ -410,6 +432,28 @@ app.get('/auth/me', (req, res) => {
     status: 'OK', 
     user: null,
     message: 'Not authenticated'
+  });
+});
+
+// Settings update endpoints without /api/ prefix
+app.put('/settings/social-links', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Social links updated successfully'
+  });
+});
+
+app.put('/settings/basic-data', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Basic data updated successfully'
+  });
+});
+
+app.put('/settings/image-settings', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Image settings updated successfully'
   });
 });
 
