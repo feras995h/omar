@@ -26,8 +26,8 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve static files from the current directory with proper headers
-app.use(express.static(__dirname, {
+// Serve static files from the dist directory
+app.use(express.static(path.join(__dirname, 'dist'), {
   maxAge: process.env.NODE_ENV === 'production' ? '1y' : '0',
   etag: true,
   lastModified: true
@@ -249,9 +249,9 @@ app.post('/api/storyboards', async (req, res) => {
   }
 });
 
-// Catch all handler: send back React's index.html file for client-side routing
+// Catch-all handler: send back React's index.html file for client-side routing
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 // Error handling middleware
@@ -265,19 +265,25 @@ app.use((err, req, res, next) => {
 });
 
 // Graceful shutdown
+let server;
+
 const gracefulShutdown = () => {
   console.log('🔄 Received shutdown signal, closing server gracefully...');
-  server.close(() => {
-    console.log('✅ Server closed successfully');
-    if (pool) {
-      pool.end(() => {
-        console.log('✅ Database pool closed');
+  if (server) {
+    server.close(() => {
+      console.log('✅ Server closed successfully');
+      if (pool) {
+        pool.end(() => {
+          console.log('✅ Database pool closed');
+          process.exit(0);
+        });
+      } else {
         process.exit(0);
-      });
-    } else {
-      process.exit(0);
-    }
-  });
+      }
+    });
+  } else {
+    process.exit(0);
+  }
 };
 
 async function startServer() {
@@ -290,7 +296,7 @@ async function startServer() {
       console.warn('📝 Note: Database-dependent features will not work until connection is established');
     }
     
-    const server = app.listen(PORT, () => {
+    server = app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📁 Serving static files from: ${path.join(__dirname, 'dist')}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
