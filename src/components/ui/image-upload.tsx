@@ -2,8 +2,9 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, X, Image } from "lucide-react";
+import { Upload, X, Image, Loader2 } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
+import { useToast } from "@/hooks/use-toast";
 
 interface ImageUploadProps {
   label: string;
@@ -23,14 +24,51 @@ export const ImageUpload = ({
   description 
 }: ImageUploadProps) => {
   const { t } = useLanguage();
+  const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileSelect = (file: File) => {
-    if (file) {
-      // Create a URL for the uploaded file
+  const handleFileSelect = async (file: File) => {
+    if (!file) return;
+    
+    setIsUploading(true);
+    
+    try {
+      // Upload file to server
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.status === 'OK') {
+        // Use the server URL for the uploaded file
+        onChange(result.file.url);
+        toast({
+          title: "تم رفع الملف بنجاح",
+          description: "تم رفع الصورة بنجاح إلى الخادم",
+        });
+      } else {
+        throw new Error(result.message || 'فشل في رفع الملف');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "خطأ في رفع الملف",
+        description: error instanceof Error ? error.message : "حدث خطأ غير متوقع",
+        variant: "destructive",
+      });
+      
+      // Fallback to local URL for preview
       const fileUrl = URL.createObjectURL(file);
       onChange(fileUrl);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -113,11 +151,23 @@ export const ImageUpload = ({
         />
         
         <div className="space-y-2">
-          <Upload className="w-8 h-8 mx-auto text-gray-400" />
+          {isUploading ? (
+            <Loader2 className="w-8 h-8 mx-auto text-blue-500 animate-spin" />
+          ) : (
+            <Upload className="w-8 h-8 mx-auto text-gray-400" />
+          )}
           <div className="text-sm text-gray-600">
-            <p>{t('dragDropImage', 'اسحب وأفلت الصورة هنا')}</p>
+            <p>
+              {isUploading 
+                ? t('uploading', 'جاري رفع الملف...') 
+                : t('dragDropImage', 'اسحب وأفلت الصورة هنا')
+              }
+            </p>
             <p className="text-xs text-gray-500">
-              {t('orClickToUpload', 'أو انقر لاختيار ملف')}
+              {isUploading 
+                ? t('pleaseWait', 'يرجى الانتظار...') 
+                : t('orClickToUpload', 'أو انقر لاختيار ملف')
+              }
             </p>
           </div>
           <Button
@@ -125,9 +175,14 @@ export const ImageUpload = ({
             variant="outline"
             size="sm"
             onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
           >
-            <Upload className="w-4 h-4 mr-2" />
-            {t('selectFile', 'اختر ملف')}
+            {isUploading ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Upload className="w-4 h-4 mr-2" />
+            )}
+            {isUploading ? t('uploading', 'جاري الرفع...') : t('selectFile', 'اختر ملف')}
           </Button>
         </div>
       </div>
@@ -136,11 +191,13 @@ export const ImageUpload = ({
       {value && (
         <div className="relative">
           <div className="border rounded-lg p-2 bg-gray-50">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Image className="w-4 h-4 text-green-600" />
                 <span className="text-sm text-gray-700 truncate max-w-xs">
-                  {value.startsWith('blob:') ? t('uploadedFile', 'ملف مرفوع') : value}
+                  {value.startsWith('blob:') ? t('uploadedFile', 'ملف مرفوع') : 
+                   value.startsWith('/api/files/') ? t('serverFile', 'ملف على الخادم') : 
+                   value}
                 </span>
               </div>
               <Button
@@ -152,6 +209,19 @@ export const ImageUpload = ({
               >
                 <X className="w-4 h-4" />
               </Button>
+            </div>
+            
+            {/* Image Preview */}
+            <div className="mt-2">
+              <img
+                src={value}
+                alt="Preview"
+                className="w-full h-32 object-cover rounded border"
+                onError={(e) => {
+                  // Hide image if it fails to load
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             </div>
           </div>
         </div>

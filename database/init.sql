@@ -277,6 +277,26 @@ INSERT INTO frames (storyboard_id, frame_number, title, description, duration_se
 (1, 3, 'لقطة ختامية', 'عرض الشعار والمعلومات', 4.0, 'Medium Shot');
 
 -- ===================================
+-- جدول الصور والملفات (Images & Files)
+-- ===================================
+CREATE TABLE IF NOT EXISTS uploaded_files (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    filename VARCHAR(255) NOT NULL,
+    original_name VARCHAR(255) NOT NULL,
+    file_data LONGBLOB NOT NULL,
+    mime_type VARCHAR(100) NOT NULL,
+    file_size INT NOT NULL,
+    file_type ENUM('image', 'video', 'audio', 'document', 'other') NOT NULL,
+    uploaded_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_uploaded_by (uploaded_by),
+    INDEX idx_file_type (file_type),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ===================================
 -- إنشاء فهارس إضافية لتحسين الأداء
 -- ===================================
 

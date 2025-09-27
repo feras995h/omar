@@ -94,6 +94,7 @@
             <button class="upload-button" onclick="testAPI()">اختبار API</button>
             <button class="upload-button" onclick="testProjects()">اختبار المشاريع</button>
             <button class="upload-button" onclick="testStats()">اختبار الإحصائيات</button>
+            <button class="upload-button" onclick="testFiles()">اختبار عرض الملفات</button>
             <div id="apiResult" class="result"></div>
         </div>
     </div>
@@ -219,6 +220,22 @@
                 resultDiv.className = 'result success';
             } catch (error) {
                 resultDiv.textContent = `❌ خطأ في الإحصائيات: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // اختبار عرض الملفات
+        async function testFiles() {
+            const resultDiv = document.getElementById('apiResult');
+            resultDiv.textContent = 'جاري اختبار عرض الملفات...';
+            
+            try {
+                const response = await fetch('/api/files');
+                const data = await response.json();
+                resultDiv.textContent = `✅ عرض الملفات يعمل!\n${JSON.stringify(data, null, 2)}`;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `❌ خطأ في عرض الملفات: ${error.message}`;
                 resultDiv.className = 'result error';
             }
         }

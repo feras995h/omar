@@ -17,23 +17,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
+// Configure multer for file uploads (in memory for database storage)
 const upload = multer({ 
-  storage: storage,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB limit
   },
@@ -136,13 +122,31 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
       });
     }
 
+    // Generate unique filename
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const filename = 'file-' + uniqueSuffix + path.extname(req.file.originalname);
+    
+    // Determine file type
+    let fileType = 'other';
+    if (req.file.mimetype.startsWith('image/')) fileType = 'image';
+    else if (req.file.mimetype.startsWith('video/')) fileType = 'video';
+    else if (req.file.mimetype.startsWith('audio/')) fileType = 'audio';
+    else if (req.file.mimetype.includes('pdf') || req.file.mimetype.includes('document')) fileType = 'document';
+
+    // Save to database
+    const [result] = await pool.execute(`
+      INSERT INTO uploaded_files (filename, original_name, file_data, mime_type, file_size, file_type, uploaded_by) 
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, [filename, req.file.originalname, req.file.buffer, req.file.mimetype, req.file.size, fileType, 1]);
+
     const fileInfo = {
-      filename: req.file.filename,
+      id: result.insertId,
+      filename: filename,
       originalName: req.file.originalname,
-      path: req.file.path,
       size: req.file.size,
       mimetype: req.file.mimetype,
-      url: `/uploads/${req.file.filename}`
+      fileType: fileType,
+      url: `/api/files/${result.insertId}`
     };
 
     res.json({
@@ -170,14 +174,36 @@ app.post('/api/upload-multiple', upload.array('files', 10), async (req, res) => 
       });
     }
 
-    const files = req.files.map(file => ({
-      filename: file.filename,
-      originalName: file.originalname,
-      path: file.path,
-      size: file.size,
-      mimetype: file.mimetype,
-      url: `/uploads/${file.filename}`
-    }));
+    const files = [];
+    
+    for (const file of req.files) {
+      // Generate unique filename
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const filename = 'file-' + uniqueSuffix + path.extname(file.originalname);
+      
+      // Determine file type
+      let fileType = 'other';
+      if (file.mimetype.startsWith('image/')) fileType = 'image';
+      else if (file.mimetype.startsWith('video/')) fileType = 'video';
+      else if (file.mimetype.startsWith('audio/')) fileType = 'audio';
+      else if (file.mimetype.includes('pdf') || file.mimetype.includes('document')) fileType = 'document';
+
+      // Save to database
+      const [result] = await pool.execute(`
+        INSERT INTO uploaded_files (filename, original_name, file_data, mime_type, file_size, file_type, uploaded_by) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `, [filename, file.originalname, file.buffer, file.mimetype, file.size, fileType, 1]);
+
+      files.push({
+        id: result.insertId,
+        filename: filename,
+        originalName: file.originalname,
+        size: file.size,
+        mimetype: file.mimetype,
+        fileType: fileType,
+        url: `/api/files/${result.insertId}`
+      });
+    }
 
     res.json({
       status: 'OK',
@@ -194,24 +220,92 @@ app.post('/api/upload-multiple', upload.array('files', 10), async (req, res) => 
   }
 });
 
-// Delete uploaded file
-app.delete('/api/upload/:filename', async (req, res) => {
+// Get uploaded file from database
+app.get('/api/files/:id', async (req, res) => {
   try {
-    const filename = req.params.filename;
-    const filePath = path.join(__dirname, 'uploads', filename);
+    const [rows] = await pool.execute(`
+      SELECT filename, original_name, file_data, mime_type, file_size 
+      FROM uploaded_files 
+      WHERE id = ?
+    `, [req.params.id]);
     
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-      res.json({
-        status: 'OK',
-        message: 'تم حذف الملف بنجاح'
-      });
-    } else {
-      res.status(404).json({
+    if (rows.length === 0) {
+      return res.status(404).json({
         status: 'ERROR',
         message: 'الملف غير موجود'
       });
     }
+    
+    const file = rows[0];
+    
+    // Set appropriate headers
+    res.setHeader('Content-Type', file.mime_type);
+    res.setHeader('Content-Length', file.file_size);
+    res.setHeader('Content-Disposition', `inline; filename="${file.original_name}"`);
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    
+    // Send file data
+    res.send(file.file_data);
+  } catch (error) {
+    console.error('File retrieval error:', error);
+    res.status(500).json({
+      status: 'ERROR',
+      message: 'خطأ في استرجاع الملف',
+      error: error.message
+    });
+  }
+});
+
+// List uploaded files
+app.get('/api/files', async (req, res) => {
+  try {
+    const [rows] = await pool.execute(`
+      SELECT id, filename, original_name, mime_type, file_size, file_type, created_at 
+      FROM uploaded_files 
+      ORDER BY created_at DESC
+    `);
+    
+    const files = rows.map(file => ({
+      id: file.id,
+      filename: file.filename,
+      originalName: file.original_name,
+      mimeType: file.mime_type,
+      fileSize: file.file_size,
+      fileType: file.file_type,
+      url: `/api/files/${file.id}`,
+      createdAt: file.created_at
+    }));
+    
+    res.json({
+      status: 'OK',
+      data: files
+    });
+  } catch (error) {
+    console.error('Files list error:', error);
+    res.status(500).json({
+      status: 'ERROR',
+      message: 'خطأ في عرض الملفات',
+      error: error.message
+    });
+  }
+});
+
+// Delete uploaded file
+app.delete('/api/files/:id', async (req, res) => {
+  try {
+    const [result] = await pool.execute('DELETE FROM uploaded_files WHERE id = ?', [req.params.id]);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        status: 'ERROR',
+        message: 'الملف غير موجود'
+      });
+    }
+    
+    res.json({
+      status: 'OK',
+      message: 'تم حذف الملف بنجاح'
+    });
   } catch (error) {
     console.error('Delete error:', error);
     res.status(500).json({
