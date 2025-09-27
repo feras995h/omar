@@ -18,17 +18,22 @@ const PORT = process.env.PORT || 3000;
 // Trust proxy for shared hosting
 app.set('trust proxy', true);
 
+// Redirect HTTPS to HTTP to avoid SSL issues
+app.use((req, res, next) => {
+  if (req.secure || req.headers['x-forwarded-proto'] === 'https') {
+    const httpUrl = `http://${req.headers.host}${req.url}`;
+    return res.redirect(301, httpUrl);
+  }
+  next();
+});
+
 // Middleware
 app.use(cors({
-  origin: [
-    'http://c4wwggwsg8oo0s4ksgsw88ss.72.60.92.146.sslip.io',
-    'https://c4wwggwsg8oo0s4ksgsw88ss.72.60.92.146.sslip.io',
-    'http://localhost:3000',
-    'https://localhost:3000'
-  ],
+  origin: true, // Allow all origins for now
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  optionsSuccessStatus: 200
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
