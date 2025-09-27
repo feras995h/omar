@@ -5,6 +5,8 @@ import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import multer from 'multer';
+import fs from 'fs';
 
 // ES module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -14,6 +16,40 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Allow images, videos, and documents
+    const allowedTypes = /jpeg|jpg|png|gif|mp4|avi|mov|pdf|doc|docx|txt/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('نوع الملف غير مدعوم'));
+    }
+  }
+});
 
 // Trust proxy for shared hosting
 app.set('trust proxy', true);
@@ -86,6 +122,105 @@ app.use(express.static(__dirname, {
     }
   }
 }));
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// File upload routes
+app.post('/api/upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        status: 'ERROR', 
+        message: 'لم يتم رفع أي ملف' 
+      });
+    }
+
+    const fileInfo = {
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      path: req.file.path,
+      size: req.file.size,
+      mimetype: req.file.mimetype,
+      url: `/uploads/${req.file.filename}`
+    };
+
+    res.json({
+      status: 'OK',
+      message: 'تم رفع الملف بنجاح',
+      file: fileInfo
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({
+      status: 'ERROR',
+      message: 'خطأ في رفع الملف',
+      error: error.message
+    });
+  }
+});
+
+// Upload multiple files
+app.post('/api/upload-multiple', upload.array('files', 10), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ 
+        status: 'ERROR', 
+        message: 'لم يتم رفع أي ملفات' 
+      });
+    }
+
+    const files = req.files.map(file => ({
+      filename: file.filename,
+      originalName: file.originalname,
+      path: file.path,
+      size: file.size,
+      mimetype: file.mimetype,
+      url: `/uploads/${file.filename}`
+    }));
+
+    res.json({
+      status: 'OK',
+      message: `تم رفع ${files.length} ملف بنجاح`,
+      files: files
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({
+      status: 'ERROR',
+      message: 'خطأ في رفع الملفات',
+      error: error.message
+    });
+  }
+});
+
+// Delete uploaded file
+app.delete('/api/upload/:filename', async (req, res) => {
+  try {
+    const filename = req.params.filename;
+    const filePath = path.join(__dirname, 'uploads', filename);
+    
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      res.json({
+        status: 'OK',
+        message: 'تم حذف الملف بنجاح'
+      });
+    } else {
+      res.status(404).json({
+        status: 'ERROR',
+        message: 'الملف غير موجود'
+      });
+    }
+  } catch (error) {
+    console.error('Delete error:', error);
+    res.status(500).json({
+      status: 'ERROR',
+      message: 'خطأ في حذف الملف',
+      error: error.message
+    });
+  }
+});
 
 // Database connection configuration
 const dbConfig = {
@@ -253,6 +388,11 @@ app.get('/test', (req, res) => {
   res.sendFile(path.join(__dirname, 'test-app.html'));
 });
 
+// Upload test page
+app.get('/upload-test', (req, res) => {
+  res.sendFile(path.join(__dirname, 'test-upload.html'));
+});
+
 // Database test endpoint
 app.get('/api/db-test', async (req, res) => {
   try {
@@ -395,45 +535,220 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-// Create storyboard endpoint (example)
-app.post('/api/storyboards', async (req, res) => {
+// ===================================
+// Projects API Endpoints
+// ===================================
+
+// Get all projects
+app.get('/api/projects', async (req, res) => {
   try {
-    const { title, description, content } = req.body;
-    
-    // Create table if it doesn't exist
-    await pool.execute(`
-      CREATE TABLE IF NOT EXISTS storyboards (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        title VARCHAR(255) NOT NULL,
-        description TEXT,
-        content JSON,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      )
+    const [rows] = await pool.execute(`
+      SELECT p.*, u.full_name as owner_name 
+      FROM projects p 
+      LEFT JOIN users u ON p.owner_id = u.id 
+      ORDER BY p.created_at DESC
     `);
+    res.json({ status: 'OK', data: rows });
+  } catch (error) {
+    res.status(500).json({ status: 'ERROR', message: error.message });
+  }
+});
+
+// Get project by ID
+app.get('/api/projects/:id', async (req, res) => {
+  try {
+    const [rows] = await pool.execute(`
+      SELECT p.*, u.full_name as owner_name 
+      FROM projects p 
+      LEFT JOIN users u ON p.owner_id = u.id 
+      WHERE p.id = ?
+    `, [req.params.id]);
     
-    const [result] = await pool.execute(
-      'INSERT INTO storyboards (title, description, content) VALUES (?, ?, ?)',
-      [title, description, JSON.stringify(content)]
-    );
+    if (rows.length === 0) {
+      return res.status(404).json({ status: 'ERROR', message: 'المشروع غير موجود' });
+    }
+    
+    res.json({ status: 'OK', data: rows[0] });
+  } catch (error) {
+    res.status(500).json({ status: 'ERROR', message: error.message });
+  }
+});
+
+// Create new project
+app.post('/api/projects', async (req, res) => {
+  try {
+    const { title, description, thumbnail_url, status, priority, owner_id, deadline } = req.body;
+    
+    const [result] = await pool.execute(`
+      INSERT INTO projects (title, description, thumbnail_url, status, priority, owner_id, deadline) 
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, [title, description, thumbnail_url, status || 'draft', priority || 'medium', owner_id, deadline]);
     
     res.json({ 
       status: 'OK', 
-      message: 'Storyboard created successfully',
-      id: result.insertId 
+      message: 'تم إنشاء المشروع بنجاح',
+      data: { id: result.insertId }
     });
   } catch (error) {
-    res.status(500).json({ 
-      status: 'ERROR', 
-      message: 'Failed to create storyboard',
-      error: error.message 
+    res.status(500).json({ status: 'ERROR', message: error.message });
+  }
+});
+
+// Update project
+app.put('/api/projects/:id', async (req, res) => {
+  try {
+    const { title, description, thumbnail_url, status, priority, deadline } = req.body;
+    
+    const [result] = await pool.execute(`
+      UPDATE projects 
+      SET title = ?, description = ?, thumbnail_url = ?, status = ?, priority = ?, deadline = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [title, description, thumbnail_url, status, priority, deadline, req.params.id]);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ status: 'ERROR', message: 'المشروع غير موجود' });
+    }
+    
+    res.json({ status: 'OK', message: 'تم تحديث المشروع بنجاح' });
+  } catch (error) {
+    res.status(500).json({ status: 'ERROR', message: error.message });
+  }
+});
+
+// Delete project
+app.delete('/api/projects/:id', async (req, res) => {
+  try {
+    const [result] = await pool.execute('DELETE FROM projects WHERE id = ?', [req.params.id]);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ status: 'ERROR', message: 'المشروع غير موجود' });
+    }
+    
+    res.json({ status: 'OK', message: 'تم حذف المشروع بنجاح' });
+  } catch (error) {
+    res.status(500).json({ status: 'ERROR', message: error.message });
+  }
+});
+
+// ===================================
+// Storyboards API Endpoints
+// ===================================
+
+// Get storyboards for a project
+app.get('/api/projects/:projectId/storyboards', async (req, res) => {
+  try {
+    const [rows] = await pool.execute(`
+      SELECT s.*, u.full_name as created_by_name 
+      FROM storyboards s 
+      LEFT JOIN users u ON s.created_by = u.id 
+      WHERE s.project_id = ? 
+      ORDER BY s.scene_number ASC
+    `, [req.params.projectId]);
+    
+    res.json({ status: 'OK', data: rows });
+  } catch (error) {
+    res.status(500).json({ status: 'ERROR', message: error.message });
+  }
+});
+
+// Create new storyboard
+app.post('/api/storyboards', async (req, res) => {
+  try {
+    const { project_id, title, description, scene_number, duration_seconds, aspect_ratio, frame_rate, resolution, created_by } = req.body;
+    
+    const [result] = await pool.execute(`
+      INSERT INTO storyboards (project_id, title, description, scene_number, duration_seconds, aspect_ratio, frame_rate, resolution, created_by) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [project_id, title, description, scene_number || 1, duration_seconds || 30, aspect_ratio || '16:9', frame_rate || 24, resolution || '1920x1080', created_by]);
+    
+    res.json({ 
+      status: 'OK', 
+      message: 'تم إنشاء القصة المصورة بنجاح',
+      data: { id: result.insertId }
     });
+  } catch (error) {
+    res.status(500).json({ status: 'ERROR', message: error.message });
+  }
+});
+
+// ===================================
+// Frames API Endpoints
+// ===================================
+
+// Get frames for a storyboard
+app.get('/api/storyboards/:storyboardId/frames', async (req, res) => {
+  try {
+    const [rows] = await pool.execute(`
+      SELECT * FROM frames 
+      WHERE storyboard_id = ? 
+      ORDER BY frame_number ASC
+    `, [req.params.storyboardId]);
+    
+    res.json({ status: 'OK', data: rows });
+  } catch (error) {
+    res.status(500).json({ status: 'ERROR', message: error.message });
+  }
+});
+
+// Create new frame
+app.post('/api/frames', async (req, res) => {
+  try {
+    const { storyboard_id, frame_number, title, description, image_url, thumbnail_url, duration_seconds, transition_type, camera_angle, camera_movement, lighting_notes, audio_notes, dialogue, action_notes } = req.body;
+    
+    const [result] = await pool.execute(`
+      INSERT INTO frames (storyboard_id, frame_number, title, description, image_url, thumbnail_url, duration_seconds, transition_type, camera_angle, camera_movement, lighting_notes, audio_notes, dialogue, action_notes) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [storyboard_id, frame_number, title, description, image_url, thumbnail_url, duration_seconds || 3.0, transition_type || 'cut', camera_angle, camera_movement, lighting_notes, audio_notes, dialogue, action_notes]);
+    
+    res.json({ 
+      status: 'OK', 
+      message: 'تم إنشاء الإطار بنجاح',
+      data: { id: result.insertId }
+    });
+  } catch (error) {
+    res.status(500).json({ status: 'ERROR', message: error.message });
+  }
+});
+
+// ===================================
+// Dashboard Statistics
+// ===================================
+
+// Get dashboard statistics
+app.get('/api/dashboard/stats', async (req, res) => {
+  try {
+    const [userCount] = await pool.execute('SELECT COUNT(*) as count FROM users');
+    const [projectCount] = await pool.execute('SELECT COUNT(*) as count FROM projects');
+    const [storyboardCount] = await pool.execute('SELECT COUNT(*) as count FROM storyboards');
+    const [frameCount] = await pool.execute('SELECT COUNT(*) as count FROM frames');
+    
+    res.json({
+      status: 'OK',
+      data: {
+        users: userCount[0].count,
+        projects: projectCount[0].count,
+        storyboards: storyboardCount[0].count,
+        frames: frameCount[0].count
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ status: 'ERROR', message: error.message });
   }
 });
 
 // Catch-all handler: send back React's index.html file for client-side routing
-// But only for non-asset requests
+// But only for non-asset and non-API requests
 app.get('*', (req, res) => {
+  // Don't serve index.html for API requests
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ status: 'ERROR', message: 'API endpoint not found' });
+  }
+  
+  // Don't serve index.html for test pages
+  if (req.path === '/test' || req.path === '/upload-test') {
+    return res.status(404).send('Test page not found');
+  }
+  
   // Don't serve index.html for asset requests (js, css, images, etc.)
   const assetExtensions = ['.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot'];
   const hasAssetExtension = assetExtensions.some(ext => req.path.endsWith(ext));

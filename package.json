@@ -23,6 +23,7 @@
     "db:test": "node test-db-connection.js",
     "db:check-services": "node database/test-mysql-services.js",
     "db:test-connection": "node database/test-connection.js",
+    "db:clean": "node remove-default-data.js",
     "debug:coolify": "node debug-coolify.js"
   },
   "dependencies": {
@@ -65,6 +66,7 @@
     "express": "^4.21.2",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.462.0",
+    "multer": "^1.4.5-lts.1",
     "mysql2": "^3.15.1",
     "next-themes": "^0.3.0",
     "react": "^18.3.1",
@@ -85,6 +87,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
+    "@types/multer": "^1.4.13",
     "@types/node": "^22.18.6",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
