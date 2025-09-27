@@ -18,15 +18,42 @@
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
     
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="./assets/favicon-DkZpcyvN.ico" />
-    <link rel="icon" type="image/svg+xml" href="./assets/favicon-DwAL7Jey.svg" />
-    <link rel="modulepreload" crossorigin href="./assets/vendor-qDz6lu5s-Bmn8PJN5.js">
-    <link rel="modulepreload" crossorigin href="./assets/router-CgHM8CMz-mp4idxYR.js">
-    <script type="module" crossorigin src="./assets/index-C94lK3cy.js"></script>
+    <link rel="icon" type="image/x-icon" href="./assets/favicon-DkZpcyvN-DkZpcyvN.ico" />
+    <link rel="icon" type="image/svg+xml" href="./assets/favicon-DwAL7Jey-DwAL7Jey.svg" />
+    <link rel="modulepreload" crossorigin href="./assets/vendor-qDz6lu5s-Bmn8PJN5-Bmn8PJN5.js">
+    <link rel="modulepreload" crossorigin href="./assets/router-CgHM8CMz-mp4idxYR-mp4idxYR.js">
+    <script type="module" crossorigin src="./assets/index-COp7rWtp.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-CPaTQRlq.css">
   </head>
 
   <body>
     <div id="root"></div>
+    
+    <!-- Force HTTP to avoid SSL issues -->
+    <script>
+      // Force HTTP if HTTPS is detected
+      if (window.location.protocol === 'https:') {
+        const httpUrl = window.location.href.replace('https:', 'http:');
+        window.location.replace(httpUrl);
+      }
+      
+      // Override fetch to use HTTP
+      const originalFetch = window.fetch;
+      window.fetch = function(url, options) {
+        if (typeof url === 'string' && url.startsWith('https:')) {
+          url = url.replace('https:', 'http:');
+        }
+        return originalFetch.call(this, url, options);
+      };
+      
+      // Override XMLHttpRequest to use HTTP
+      const originalXHROpen = XMLHttpRequest.prototype.open;
+      XMLHttpRequest.prototype.open = function(method, url, ...args) {
+        if (typeof url === 'string' && url.startsWith('https:')) {
+          url = url.replace('https:', 'http:');
+        }
+        return originalXHROpen.call(this, method, url, ...args);
+      };
+    </script>
   </body>
 </html>

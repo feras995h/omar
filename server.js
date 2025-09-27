@@ -27,6 +27,25 @@ app.use((req, res, next) => {
   next();
 });
 
+// Force HTTP in all responses
+app.use((req, res, next) => {
+  // Set headers to force HTTP
+  res.setHeader('Strict-Transport-Security', 'max-age=0; includeSubDomains');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  
+  // Override any HTTPS redirects
+  res.redirect = function(url) {
+    if (typeof url === 'string' && url.startsWith('https:')) {
+      url = url.replace('https:', 'http:');
+    }
+    return res.redirect.call(this, url);
+  };
+  
+  next();
+});
+
 // Middleware
 app.use(cors({
   origin: true, // Allow all origins for now
