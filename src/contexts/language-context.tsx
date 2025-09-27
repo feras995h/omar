@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { apiRequest } from '../lib/api';
 
 interface LanguageContextType {
   language: 'ar' | 'en';
@@ -91,7 +92,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const loadLanguagePreference = async () => {
     try {
-      const response = await fetch('/api/settings/language', {
+      const response = await apiRequest('/settings/language', {
         credentials: 'include',
       });
       
@@ -120,11 +121,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     
     // Save language preference to API
     try {
-      await fetch('/api/settings/language', {
+      await apiRequest('/settings/language', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         credentials: 'include',
         body: JSON.stringify({ language: lang }),
       });
