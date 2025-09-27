@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تشخيص التطبيق</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .success { border-color: #4CAF50; background: #f1f8e9; }
+        .error { border-color: #f44336; background: #ffebee; }
+        .warning { border-color: #ff9800; background: #fff3e0; }
+        .info { border-color: #2196F3; background: #e3f2fd; }
+        
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #1976D2; }
+        
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        
+        .file-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .file-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 تشخيص التطبيق - لماذا لا تظهر التغييرات؟</h1>
+        
+        <div class="section info">
+            <h3>📋 معلومات النظام</h3>
+            <div id="system-info" class="result">جاري التحميل...</div>
+        </div>
+
+        <div class="section">
+            <h3>🌐 اختبار الاتصال</h3>
+            <button onclick="testConnection()">اختبار الاتصال</button>
+            <div id="connection-result" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h3>📁 فحص الملفات</h3>
+            <button onclick="checkFiles()">فحص الملفات</button>
+            <div id="files-result" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h3>🔧 اختبار API</h3>
+            <button onclick="testAPIs()">اختبار APIs</button>
+            <div id="api-result" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h3>📱 اختبار الصفحات</h3>
+            <button onclick="testPages()">اختبار الصفحات</button>
+            <div id="pages-result" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h3>🔄 إعادة تحميل</h3>
+            <button onclick="reloadApp()">إعادة تحميل التطبيق</button>
+            <button onclick="clearCache()">مسح Cache</button>
+            <div id="reload-result" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h3>📊 تقرير مفصل</h3>
+            <button onclick="generateReport()">إنشاء تقرير</button>
+            <div id="report-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        // معلومات النظام
+        document.getElementById('system-info').innerHTML = `
+نظام التشغيل: ${navigator.platform}
+المتصفح: ${navigator.userAgent}
+الوقت: ${new Date().toLocaleString('ar')}
+URL الحالي: ${window.location.href}
+        `;
+
+        async function testConnection() {
+            const result = document.getElementById('connection-result');
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                result.innerHTML = `✅ الاتصال ناجح\nالخادم: ${data.message}\nالوقت: ${data.timestamp}`;
+                result.parentElement.className = 'section success';
+            } catch (error) {
+                result.innerHTML = `❌ فشل الاتصال: ${error.message}`;
+                result.parentElement.className = 'section error';
+            }
+        }
+
+        async function checkFiles() {
+            const result = document.getElementById('files-result');
+            try {
+                // فحص الملفات الأساسية
+                const files = [
+                    '/index.html',
+                    '/assets/index-CYeiDezM.js',
+                    '/assets/index-CPaTQRlq.css'
+                ];
+                
+                let report = 'فحص الملفات:\n\n';
+                
+                for (const file of files) {
+                    try {
+                        const response = await fetch(file, { method: 'HEAD' });
+                        if (response.ok) {
+                            report += `✅ ${file} - موجود (${response.status})\n`;
+                        } else {
+                            report += `❌ ${file} - خطأ (${response.status})\n`;
+                        }
+                    } catch (error) {
+                        report += `❌ ${file} - خطأ: ${error.message}\n`;
+                    }
+                }
+                
+                result.innerHTML = report;
+                result.parentElement.className = 'section success';
+            } catch (error) {
+                result.innerHTML = `❌ خطأ في فحص الملفات: ${error.message}`;
+                result.parentElement.className = 'section error';
+            }
+        }
+
+        async function testAPIs() {
+            const result = document.getElementById('api-result');
+            try {
+                let report = 'اختبار APIs:\n\n';
+                
+                // اختبار API المشاريع
+                try {
+                    const projectsResponse = await fetch('/api/projects');
+                    const projectsData = await projectsResponse.json();
+                    report += `✅ /api/projects - ${projectsData.data.length} مشروع\n`;
+                } catch (error) {
+                    report += `❌ /api/projects - خطأ: ${error.message}\n`;
+                }
+                
+                // اختبار API إعدادات الصور
+                try {
+                    const settingsResponse = await fetch('/settings/image-settings', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({logo: 'test.jpg'})
+                    });
+                    const settingsData = await settingsResponse.json();
+                    report += `✅ /settings/image-settings - ${settingsData.message}\n`;
+                } catch (error) {
+                    report += `❌ /settings/image-settings - خطأ: ${error.message}\n`;
+                }
+                
+                result.innerHTML = report;
+                result.parentElement.className = 'section success';
+            } catch (error) {
+                result.innerHTML = `❌ خطأ في اختبار APIs: ${error.message}`;
+                result.parentElement.className = 'section error';
+            }
+        }
+
+        function testPages() {
+            const result = document.getElementById('pages-result');
+            const pages = [
+                { name: 'الصفحة الرئيسية', url: '/' },
+                { name: 'صفحة المشاريع', url: '/projects' },
+                { name: 'لوحة التحكم', url: '/settings' },
+                { name: 'صفحة الاختبار', url: '/test-changes' }
+            ];
+            
+            let report = 'فتح الصفحات:\n\n';
+            pages.forEach(page => {
+                window.open(page.url, '_blank');
+                report += `✅ تم فتح ${page.name}\n`;
+            });
+            
+            result.innerHTML = report;
+            result.parentElement.className = 'section success';
+        }
+
+        function reloadApp() {
+            const result = document.getElementById('reload-result');
+            result.innerHTML = '🔄 إعادة تحميل التطبيق...\nسيتم إعادة تحميل الصفحة خلال 3 ثوان';
+            result.parentElement.className = 'section warning';
+            
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 3000);
+        }
+
+        function clearCache() {
+            const result = document.getElementById('reload-result');
+            
+            // مسح cache
+            if ('caches' in window) {
+                caches.keys().then(function(names) {
+                    for (let name of names) {
+                        caches.delete(name);
+                    }
+                    result.innerHTML = '✅ تم مسح cache\nسيتم إعادة تحميل الصفحة...';
+                    result.parentElement.className = 'section success';
+                    setTimeout(() => {
+                        window.location.reload(true);
+                    }, 1000);
+                });
+            } else {
+                result.innerHTML = '❌ المتصفح لا يدعم مسح cache\nجرب Ctrl+Shift+R';
+                result.parentElement.className = 'section error';
+            }
+        }
+
+        async function generateReport() {
+            const result = document.getElementById('report-result');
+            
+            let report = '📊 تقرير مفصل:\n\n';
+            
+            // معلومات المتصفح
+            report += `المتصفح: ${navigator.userAgent}\n`;
+            report += `الوقت: ${new Date().toLocaleString('ar')}\n\n`;
+            
+            // اختبار الاتصال
+            try {
+                const healthResponse = await fetch('/api/health');
+                const healthData = await healthResponse.json();
+                report += `✅ الخادم يعمل: ${healthData.message}\n`;
+            } catch (error) {
+                report += `❌ الخادم لا يعمل: ${error.message}\n`;
+            }
+            
+            // اختبار المشاريع
+            try {
+                const projectsResponse = await fetch('/api/projects');
+                const projectsData = await projectsResponse.json();
+                report += `✅ API المشاريع: ${projectsData.data.length} مشروع\n`;
+            } catch (error) {
+                report += `❌ API المشاريع: ${error.message}\n`;
+            }
+            
+            // فحص الملفات
+            try {
+                const indexResponse = await fetch('/index.html', { method: 'HEAD' });
+                report += `✅ index.html: ${indexResponse.status}\n`;
+            } catch (error) {
+                report += `❌ index.html: ${error.message}\n`;
+            }
+            
+            report += '\n💡 التوصيات:\n';
+            report += '1. تأكد من أن الخادم يعمل (npm start)\n';
+            report += '2. امسح cache المتصفح (Ctrl+Shift+R)\n';
+            report += '3. جرب متصفح مختلف\n';
+            report += '4. تأكد من أن التطبيق تم بناؤه (npm run build)\n';
+            
+            result.innerHTML = report;
+            result.parentElement.className = 'section info';
+        }
+
+        // تشغيل الاختبارات تلقائياً
+        window.onload = function() {
+            testConnection();
+            checkFiles();
+            testAPIs();
+        };
+    </script>
+</body>
+</html>

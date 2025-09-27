@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار التغييرات</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .success {
+            border-color: #4CAF50;
+            background: #f1f8e9;
+        }
+        .error {
+            border-color: #f44336;
+            background: #ffebee;
+        }
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1976D2;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 اختبار التغييرات في التطبيق</h1>
+        
+        <div class="test-section">
+            <h3>1. اختبار الاتصال بالخادم</h3>
+            <button onclick="testServer()">اختبار الخادم</button>
+            <div id="server-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. اختبار API المشاريع</h3>
+            <button onclick="testProjectsAPI()">اختبار API المشاريع</button>
+            <div id="projects-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. اختبار صفحة المشاريع</h3>
+            <button onclick="testProjectsPage()">فتح صفحة المشاريع</button>
+            <div id="projects-page-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. اختبار لوحة التحكم</h3>
+            <button onclick="testSettingsPage()">فتح لوحة التحكم</button>
+            <div id="settings-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. اختبار API إعدادات الصور</h3>
+            <button onclick="testImageSettingsAPI()">اختبار API إعدادات الصور</button>
+            <div id="image-settings-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>6. إعادة تحميل التطبيق</h3>
+            <button onclick="reloadApp()">إعادة تحميل التطبيق</button>
+            <div id="reload-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testServer() {
+            const result = document.getElementById('server-result');
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                result.innerHTML = `✅ الخادم يعمل: ${data.message}`;
+                result.parentElement.className = 'test-section success';
+            } catch (error) {
+                result.innerHTML = `❌ خطأ في الاتصال: ${error.message}`;
+                result.parentElement.className = 'test-section error';
+            }
+        }
+
+        async function testProjectsAPI() {
+            const result = document.getElementById('projects-result');
+            try {
+                const response = await fetch('/api/projects');
+                const data = await response.json();
+                result.innerHTML = `✅ API المشاريع يعمل: ${data.data.length} مشروع موجود`;
+                result.parentElement.className = 'test-section success';
+            } catch (error) {
+                result.innerHTML = `❌ خطأ في API المشاريع: ${error.message}`;
+                result.parentElement.className = 'test-section error';
+            }
+        }
+
+        function testProjectsPage() {
+            const result = document.getElementById('projects-page-result');
+            window.open('/projects', '_blank');
+            result.innerHTML = '✅ تم فتح صفحة المشاريع في تبويب جديد';
+            result.parentElement.className = 'test-section success';
+        }
+
+        function testSettingsPage() {
+            const result = document.getElementById('settings-result');
+            window.open('/settings', '_blank');
+            result.innerHTML = '✅ تم فتح لوحة التحكم في تبويب جديد';
+            result.parentElement.className = 'test-section success';
+        }
+
+        async function testImageSettingsAPI() {
+            const result = document.getElementById('image-settings-result');
+            try {
+                const response = await fetch('/settings/image-settings', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({logo: 'test.jpg'})
+                });
+                const data = await response.json();
+                result.innerHTML = `✅ API إعدادات الصور يعمل: ${data.message}`;
+                result.parentElement.className = 'test-section success';
+            } catch (error) {
+                result.innerHTML = `❌ خطأ في API إعدادات الصور: ${error.message}`;
+                result.parentElement.className = 'test-section error';
+            }
+        }
+
+        function reloadApp() {
+            const result = document.getElementById('reload-result');
+            // Clear cache and reload
+            if ('caches' in window) {
+                caches.keys().then(function(names) {
+                    for (let name of names) {
+                        caches.delete(name);
+                    }
+                });
+            }
+            result.innerHTML = '✅ تم مسح cache وإعادة تحميل الصفحة';
+            result.parentElement.className = 'test-section success';
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 1000);
+        }
+
+        // Auto-run tests on page load
+        window.onload = function() {
+            testServer();
+            testProjectsAPI();
+        };
+    </script>
+</body>
+</html>
