@@ -457,6 +457,14 @@ app.put('/settings/image-settings', (req, res) => {
   });
 });
 
+// Logout route
+app.post('/auth/logout', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'تم تسجيل الخروج بنجاح'
+  });
+});
+
 // Login route without /api/ prefix
 app.post('/auth/login', async (req, res) => {
   try {
@@ -714,6 +722,26 @@ app.get('/api/projects/:id', async (req, res) => {
 
 // Create new project
 app.post('/api/projects', async (req, res) => {
+  try {
+    const { title, description, thumbnail_url, status, priority, owner_id, deadline } = req.body;
+    
+    const [result] = await pool.execute(`
+      INSERT INTO projects (title, description, thumbnail_url, status, priority, owner_id, deadline) 
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, [title, description, thumbnail_url, status || 'draft', priority || 'medium', owner_id, deadline]);
+    
+    res.json({ 
+      status: 'OK', 
+      message: 'تم إنشاء المشروع بنجاح',
+      data: { id: result.insertId }
+    });
+  } catch (error) {
+    res.status(500).json({ status: 'ERROR', message: error.message });
+  }
+});
+
+// Create project without /api/ prefix
+app.post('/projects', async (req, res) => {
   try {
     const { title, description, thumbnail_url, status, priority, owner_id, deadline } = req.body;
     

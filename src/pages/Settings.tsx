@@ -320,7 +320,7 @@ const Settings = () => {
                       <Input
                         id="address"
                         type="text"
-                        placeholder={t('addressPlaceholder', 'الرياض، المملكة العربية السعودية')}
+                        placeholder={t('addressPlaceholder', 'طرابلس، ليبيا')}
                         value={localBasicData.address}
                         onChange={(e) => handleBasicDataChange('address', e.target.value)}
                         className="text-sm sm:text-base"

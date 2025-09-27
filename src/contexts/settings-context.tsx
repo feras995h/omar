@@ -47,12 +47,12 @@ const defaultBasicData: BasicData = {
   siteName: 'Story Board Engine',
   siteDescription: 'منصة إدارة المحتوى المتقدمة',
   contactEmail: 'info@example.com',
-  contactPhone: '+966 50 123 4567',
-  address: 'الرياض، المملكة العربية السعودية'
+  contactPhone: '+218 21 123 4567',
+  address: 'طرابلس، ليبيا'
 };
 
 const defaultImageSettings: ImageSettings = {
-  logo: '',
+  logo: '/src/assets/logo.svg',
   favicon: '',
   heroImage: '',
   aboutImage: ''
