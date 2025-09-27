@@ -20,9 +20,7 @@ app.set('trust proxy', true);
 
 // Middleware
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL, process.env.DOMAIN_URL].filter(Boolean)
-    : true,
+  origin: true, // Allow any origin since we're using relative URLs
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
