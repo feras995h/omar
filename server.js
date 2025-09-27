@@ -27,7 +27,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Configure MIME types for static files
-app.use(express.static(path.join(__dirname, 'dist'), {
+app.use(express.static(__dirname, {
   maxAge: process.env.NODE_ENV === 'production' ? '1y' : '0',
   etag: true,
   lastModified: true,
@@ -90,8 +90,9 @@ app.get('/api/debug/files', (req, res) => {
   res.json({ 
     status: 'OK', 
     message: 'Debug endpoint working',
-    distPath: path.join(__dirname, 'dist'),
-    assetsPath: path.join(__dirname, 'dist', 'assets')
+    rootPath: __dirname,
+    assetsPath: path.join(__dirname, 'assets'),
+    indexPath: path.join(__dirname, 'index.html')
   });
 });
 
@@ -284,7 +285,7 @@ app.get('*', (req, res) => {
     return res.status(404).send('File not found');
   }
   
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Error handling middleware
@@ -331,7 +332,7 @@ async function startServer() {
     
     server = app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`📁 Serving static files from: ${path.join(__dirname, 'dist')}`);
+      console.log(`📁 Serving static files from: ${__dirname}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
       if (isDbConnected) {
         console.log('✅ Database connected and ready');
