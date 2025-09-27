@@ -26,11 +26,11 @@ const Login = () => {
       return;
     }
 
-    const success = await login(username, password);
-    if (success) {
+    const result = await login(username, password);
+    if (result.success) {
       navigate('/dashboard');
     } else {
-      setError(language === 'ar' ? 'اسم المستخدم أو كلمة المرور غير صحيحة' : 'Invalid username or password');
+      setError(result.error || (language === 'ar' ? 'اسم المستخدم أو كلمة المرور غير صحيحة' : 'Invalid username or password'));
     }
   };
 

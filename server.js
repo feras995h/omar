@@ -20,15 +20,13 @@ app.set('trust proxy', true);
 
 // Middleware
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL, process.env.DOMAIN_URL].filter(Boolean)
-    : true,
+  origin: true, // Allow any origin since we're using relative URLs
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve static files from the dist directory with proper headers
+// Serve static files from the dist directory
 app.use(express.static(path.join(__dirname, 'dist'), {
   maxAge: process.env.NODE_ENV === 'production' ? '1y' : '0',
   etag: true,
@@ -110,6 +108,111 @@ app.get('/api/storyboards', async (req, res) => {
   }
 });
 
+// Authentication endpoints
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ 
+        status: 'ERROR', 
+        message: 'Username and password are required' 
+      });
+    }
+    
+    // Query user from database
+    const [users] = await pool.execute(
+      'SELECT * FROM users WHERE username = ? OR email = ?',
+      [username, username]
+    );
+    
+    if (users.length === 0) {
+      return res.status(401).json({ 
+        status: 'ERROR', 
+        message: 'Invalid username or password' 
+      });
+    }
+    
+    const user = users[0];
+    
+    // Simple password comparison (in production, use bcrypt)
+    if (user.password !== password) {
+      return res.status(401).json({ 
+        status: 'ERROR', 
+        message: 'Invalid username or password' 
+      });
+    }
+    
+    // Return user data (excluding password)
+    const { password: _, ...userWithoutPassword } = user;
+    
+    res.json({ 
+      status: 'OK', 
+      message: 'Login successful',
+      user: userWithoutPassword
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ 
+      status: 'ERROR', 
+      message: 'Internal server error',
+      error: error.message 
+    });
+  }
+});
+
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { username, email, password, full_name } = req.body;
+    
+    if (!username || !email || !password) {
+      return res.status(400).json({ 
+        status: 'ERROR', 
+        message: 'Username, email, and password are required' 
+      });
+    }
+    
+    // Check if user already exists
+    const [existingUsers] = await pool.execute(
+      'SELECT id FROM users WHERE username = ? OR email = ?',
+      [username, email]
+    );
+    
+    if (existingUsers.length > 0) {
+      return res.status(409).json({ 
+        status: 'ERROR', 
+        message: 'Username or email already exists' 
+      });
+    }
+    
+    // Insert new user
+    const [result] = await pool.execute(
+      'INSERT INTO users (username, email, password, full_name, role) VALUES (?, ?, ?, ?, ?)',
+      [username, email, password, full_name || username, 'user']
+    );
+    
+    // Return success (excluding password)
+    res.status(201).json({ 
+      status: 'OK', 
+      message: 'User registered successfully',
+      user: {
+        id: result.insertId,
+        username,
+        email,
+        full_name: full_name || username,
+        role: 'user'
+      }
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ 
+      status: 'ERROR', 
+      message: 'Internal server error',
+      error: error.message 
+    });
+  }
+});
+
 // Create storyboard endpoint (example)
 app.post('/api/storyboards', async (req, res) => {
   try {
@@ -146,7 +249,7 @@ app.post('/api/storyboards', async (req, res) => {
   }
 });
 
-// Catch all handler: send back React's index.html file for client-side routing
+// Catch-all handler: send back React's index.html file for client-side routing
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
@@ -162,19 +265,25 @@ app.use((err, req, res, next) => {
 });
 
 // Graceful shutdown
+let server;
+
 const gracefulShutdown = () => {
   console.log('🔄 Received shutdown signal, closing server gracefully...');
-  server.close(() => {
-    console.log('✅ Server closed successfully');
-    if (pool) {
-      pool.end(() => {
-        console.log('✅ Database pool closed');
+  if (server) {
+    server.close(() => {
+      console.log('✅ Server closed successfully');
+      if (pool) {
+        pool.end(() => {
+          console.log('✅ Database pool closed');
+          process.exit(0);
+        });
+      } else {
         process.exit(0);
-      });
-    } else {
-      process.exit(0);
-    }
-  });
+      }
+    });
+  } else {
+    process.exit(0);
+  }
 };
 
 async function startServer() {
@@ -187,7 +296,7 @@ async function startServer() {
       console.warn('📝 Note: Database-dependent features will not work until connection is established');
     }
     
-    const server = app.listen(PORT, () => {
+    server = app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📁 Serving static files from: ${path.join(__dirname, 'dist')}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);

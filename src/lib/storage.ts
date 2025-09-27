@@ -69,7 +69,8 @@ class APIStorageManager {
   private baseURL: string;
 
   constructor() {
-    this.baseURL = '/api';
+    // Use environment variable for API base URL, fallback to relative path for development
+    this.baseURL = import.meta.env.VITE_API_BASE_URL || '/api';
   }
 
   private async apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {

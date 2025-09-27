@@ -126,12 +126,16 @@ async function createDatabaseIfNotExists(connection, dbName) {
             console.log(`ℹ️  قاعدة البيانات موجودة مسبقاً: ${dbName}`);
         }
         
-        // التبديل إلى قاعدة البيانات
-        await connection.execute(`USE \`${dbName}\``);
-        return true;
+        // إغلاق الاتصال الحالي والاتصال بقاعدة البيانات المحددة
+        await connection.end();
+        connection = await mysql.createConnection({
+            ...dbConfigWithoutDB,
+            database: dbName
+        });
+        return connection;
     } catch (error) {
         console.error('❌ خطأ في إنشاء قاعدة البيانات:', error.message);
-        return false;
+        return null;
     }
 }
 
@@ -206,10 +210,13 @@ async function setupDatabase() {
         connection = await testConnection();
         
         // إنشاء قاعدة البيانات إذا لم تكن موجودة
-        const dbCreated = await createDatabaseIfNotExists(connection, dbConfig.database);
-        if (!dbCreated) {
+        const dbConnection = await createDatabaseIfNotExists(connection, dbConfig.database);
+        if (!dbConnection) {
             throw new Error('فشل في إنشاء أو الوصول إلى قاعدة البيانات');
         }
+        
+        // استخدام الاتصال الجديد
+        connection = dbConnection;
         
         // قراءة وتنفيذ ملف init.sql
         console.log('\n🔄 قراءة ملف إعداد قاعدة البيانات...');

@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { apiRequest, apiRequestJson } from '../lib/api';
 
 interface User {
   id: string;
@@ -9,7 +10,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -36,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkAuthStatus = async () => {
     try {
-      const response = await fetch('/api/auth/me', {
+      const response = await apiRequest('/auth/me', {
         credentials: 'include', // Include cookies for session
       });
       
@@ -51,38 +52,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const login = async (username: string, password: string): Promise<boolean> => {
-    setIsLoading(true);
-    
+  const login = async (username: string, password: string) => {
     try {
-      const response = await fetch('/api/auth/login', {
+      const userData = await apiRequestJson<User>('/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include cookies for session
+        credentials: 'include',
         body: JSON.stringify({ username, password }),
       });
 
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-        setIsLoading(false);
-        return true;
-      } else {
-        setIsLoading(false);
-        return false;
-      }
+      setUser(userData);
+      return { success: true };
     } catch (error) {
       console.error('Login error:', error);
-      setIsLoading(false);
-      return false;
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Login failed' 
+      };
     }
   };
 
   const logout = async (): Promise<void> => {
     try {
-      await fetch('/api/auth/logout', {
+      await apiRequest('/auth/logout', {
         method: 'POST',
         credentials: 'include', // Include cookies for session
       });

@@ -1,4 +1,5 @@
-﻿import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { apiRequest, apiRequestJson } from '../lib/api';
 
 export interface SocialLinks {
   facebook: string;
@@ -69,7 +70,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const loadSettings = async () => {
     try {
-      const response = await fetch('/api/settings');
+      const response = await apiRequest('/settings');
       if (response.ok) {
         const settings = await response.json();
         if (settings.socialLinks) setSocialLinks(settings.socialLinks);
@@ -83,11 +84,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const updateSocialLinks = async (links: SocialLinks) => {
     try {
-      const response = await fetch('/api/settings/social-links', {
+      const response = await apiRequest('/settings/social-links', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(links),
       });
 
@@ -104,11 +102,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const updateBasicData = async (data: BasicData) => {
     try {
-      const response = await fetch('/api/settings/basic-data', {
+      const response = await apiRequest('/settings/basic-data', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
 
@@ -125,11 +120,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const updateImageSettings = async (images: ImageSettings) => {
     try {
-      const response = await fetch('/api/settings/image-settings', {
+      const response = await apiRequest('/settings/image-settings', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(images),
       });
 
