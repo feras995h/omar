@@ -132,6 +132,87 @@ app.get('/api/auth/me', (req, res) => {
   });
 });
 
+// Routes without /api/ prefix for frontend compatibility
+app.get('/settings', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    settings: {
+      theme: 'light',
+      language: 'ar',
+      notifications: true
+    }
+  });
+});
+
+app.get('/settings/language', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    language: 'ar',
+    availableLanguages: ['ar', 'en']
+  });
+});
+
+app.get('/auth/me', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    user: null,
+    message: 'Not authenticated'
+  });
+});
+
+// Login route without /api/ prefix
+app.post('/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ 
+        status: 'ERROR', 
+        message: 'Username and password are required' 
+      });
+    }
+    
+    // Query user from database
+    const [users] = await pool.execute(
+      'SELECT * FROM users WHERE username = ? OR email = ?',
+      [username, username]
+    );
+    
+    if (users.length === 0) {
+      return res.status(401).json({ 
+        status: 'ERROR', 
+        message: 'Invalid username or password' 
+      });
+    }
+    
+    const user = users[0];
+    
+    // Simple password comparison (in production, use bcrypt)
+    if (user.password_hash !== password) {
+      return res.status(401).json({ 
+        status: 'ERROR', 
+        message: 'Invalid username or password' 
+      });
+    }
+    
+    // Return user data (excluding password)
+    const { password_hash: _, ...userWithoutPassword } = user;
+    
+    res.json({ 
+      status: 'OK', 
+      message: 'Login successful',
+      user: userWithoutPassword
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ 
+      status: 'ERROR', 
+      message: 'Internal server error',
+      error: error.message 
+    });
+  }
+});
+
 // Debug route to check static files
 app.get('/api/debug/files', (req, res) => {
   res.json({ 
