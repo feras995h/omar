@@ -26,11 +26,20 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve static files from the dist directory
+// Configure MIME types for static files
 app.use(express.static(path.join(__dirname, 'dist'), {
   maxAge: process.env.NODE_ENV === 'production' ? '1y' : '0',
   etag: true,
-  lastModified: true
+  lastModified: true,
+  setHeaders: (res, path) => {
+    if (path.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    } else if (path.endsWith('.mjs')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    } else if (path.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css; charset=utf-8');
+    }
+  }
 }));
 
 // Database connection configuration
@@ -250,7 +259,12 @@ app.post('/api/storyboards', async (req, res) => {
 });
 
 // Catch-all handler: send back React's index.html file for client-side routing
+// But only for non-asset requests
 app.get('*', (req, res) => {
+  // Don't serve index.html for asset requests
+  if (req.path.includes('.') && !req.path.endsWith('.html')) {
+    return res.status(404).send('File not found');
+  }
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
